@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1",
+	"FriendlyName": "Import_SDF",
+	"Description": "SDFormat (Simulation Description Format) importer",
+	"Category": "Other",
+	"CreatedBy": "mvu20002",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "Import_SDF",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
