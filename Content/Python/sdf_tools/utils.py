@@ -1,10 +1,64 @@
 # sdf_tools/utils.py
+import subprocess
+import os
 import math
 import numpy as np
 import unreal as ue # Vector için lazım
 from . import schema
 
 SI_TO_UE = 100.0  # m -> cm
+BLENDER_EXE = "/home/veli/Documents/blender-4.5.5-linux-x64/blender" 
+
+def convert_dae_to_fbx(dae_path, output_folder):
+    if not os.path.exists(dae_path):
+        print(f"Error: DAE file not found: {dae_path}")
+        return None
+
+    file_name = os.path.basename(dae_path)
+    base_name = os.path.splitext(file_name)[0]
+    fbx_name = f"{base_name}.fbx"
+    fbx_path = os.path.join(output_folder, fbx_name)
+
+    # Klasör yoksa oluştur
+    os.makedirs(output_folder, exist_ok=True)
+
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "blender_convert.py")
+    
+    # Script dosyasının varlığını kontrol et
+    if not os.path.exists(script_path):
+        print(f"Error: Helper script not found at {script_path}")
+        return None
+
+    cmd = [
+        BLENDER_EXE,
+        "-b",
+        "-P", script_path,
+        "--",
+        dae_path,
+        fbx_path
+    ]
+
+    print(f"Converting DAE to FBX: {file_name}...")
+
+    # stdout=subprocess.PIPE yerine None yaparsan Blender çıktılarını terminalde canlı görürsün.
+    # Ancak programatik kontrol için capture_output=True kullanıp hatayı yakalayalım.
+    result = subprocess.run(cmd, text=True, capture_output=True)
+
+    if result.returncode != 0:
+        print("--- BLENDER ERROR ---")
+        print(result.stdout) # Bazen Blender hatayı stdout'a yazar
+        print(result.stderr)
+        return None
+    
+    # KONTROL: Blender hata vermedi ama dosya oluştu mu?
+    if not os.path.exists(fbx_path):
+        print("--- ERROR: Blender finished but FBX file was not created. ---")
+        print("Blender Log:")
+        print(result.stdout) # Loga bakarak neden oluşmadığını anlarız
+        return None
+
+    print("Conversion Done.")
+    return fbx_path
 
 def parse_pose_text(text):
     if not text or not text.strip():

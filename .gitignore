@@ -1,3 +1,6 @@
 # Exclude binaries folder
 Binaries/
 Intermediate/
+
+# Exclude pycache files
+*.pyc

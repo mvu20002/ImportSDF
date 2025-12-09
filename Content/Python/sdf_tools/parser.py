@@ -27,6 +27,41 @@ def report(model: schema.Model):
         msg += f"  - {mesh_name}\n"
     return msg
 
+def parse_geometry(geom_elem):
+    """Geometry elementini okuyup schema.Geometry döner."""
+    if geom_elem is None:
+        return None
+
+    # 1. MESH KONTROLÜ
+    mesh_elem = geom_elem.find('mesh')
+    if mesh_elem is not None:
+        uri = mesh_elem.findtext('uri', default="")
+        scale = utils.parse_scale_text(mesh_elem.findtext('scale', default="1 1 1"))
+        mesh_name = os.path.basename(uri).replace('.dae', '').replace('.stl', '').replace('.obj', '').replace('.', '_')
+        return schema.Geometry(mesh=schema.Mesh(mesh_name, uri, scale))
+
+    # 2. BOX KONTROLÜ
+    box_elem = geom_elem.find('box')
+    if box_elem is not None:
+        size_text = box_elem.findtext('size', default="1 1 1")
+        size = tuple(float(v) for v in size_text.split())
+        return schema.Geometry(box=schema.Box(size))
+
+    # 3. CYLINDER KONTROLÜ
+    cyl_elem = geom_elem.find('cylinder')
+    if cyl_elem is not None:
+        radius = float(cyl_elem.findtext('radius', default="0.5"))
+        length = float(cyl_elem.findtext('length', default="1.0"))
+        return schema.Geometry(cylinder=schema.Cylinder(radius, length))
+
+    # 4. SPHERE KONTROLÜ
+    sph_elem = geom_elem.find('sphere')
+    if sph_elem is not None:
+        radius = float(sph_elem.findtext('radius', default="0.5"))
+        return schema.Geometry(sphere=schema.Sphere(radius))
+
+    return None
+
 def parse_sdf(sdf_path):
     links = {}
     joints = {}
@@ -60,19 +95,7 @@ def parse_sdf(sdf_path):
                 transparency = float(v.findtext('transparency', default="0.0"))
                 cast_shadows = v.findtext('cast_shadows', default="1") == "1"
                 
-                geometry = None
-                geom_elem = v.find('geometry')
-                if geom_elem is not None:
-                    mesh_elem = geom_elem.find('mesh')
-                    if mesh_elem is not None:
-                        uri = mesh_elem.findtext('uri', default="")
-                        scale = utils.parse_scale_text(mesh_elem.findtext('scale', default="1 1 1"))
-                        
-                        # Mesh ismini URI'den temizleyerek çıkar
-                        mesh_name = os.path.basename(uri).replace('.dae', '').replace('.stl', '').replace('.obj', '').replace('.', '_')
-                        
-                        mesh = schema.Mesh(mesh_name, uri, scale)
-                        geometry = schema.Geometry(mesh)
+                geometry = parse_geometry(v.find('geometry'))
                 
                 visuals.append(schema.Visual(v_pose, geometry, transparency, cast_shadows))
 
@@ -80,18 +103,7 @@ def parse_sdf(sdf_path):
             for c in l.findall('collision'):
                 c_name = c.get('name', 'UnnamedCollision')
                 c_pose = utils.parse_pose_text(c.findtext('pose', default="0 0 0 0 0 0"))
-                geometry = None
-                geom_elem = c.find('geometry')
-                if geom_elem is not None:
-                    mesh_elem = geom_elem.find('mesh')
-                    if mesh_elem is not None:
-                        uri = mesh_elem.findtext('uri', default="")
-                        scale = utils.parse_scale_text(mesh_elem.findtext('scale', default="1 1 1"))
-                        
-                        mesh_name = os.path.basename(uri).replace('.dae', '').replace('.stl', '').replace('.obj', '')
-                        mesh = schema.Mesh(mesh_name, uri, scale)
-                        geometry = schema.Geometry(mesh)
-                
+                geometry = parse_geometry(c.find('geometry'))
                 collisions.append(schema.Collision(c_name, c_pose, geometry))
 
             # Inertial Parsing

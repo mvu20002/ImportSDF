@@ -6,9 +6,26 @@ class Mesh:
         self.uri = uri
         self.scale = scale
 
+class Box:
+    def __init__(self, size=(1.0, 1.0, 1.0)):
+        self.size = size # (x, y, z)
+
+class Cylinder:
+    def __init__(self, radius=0.5, length=1.0):
+        self.radius = radius
+        self.length = length
+
+class Sphere:
+    def __init__(self, radius=0.5):
+        self.radius = radius
+
 class Geometry:
-    def __init__(self, mesh: Mesh=None):
+    # Mesh'in yanına diğerlerini de ekliyoruz (hepsi opsiyonel)
+    def __init__(self, mesh: Mesh=None, box: Box=None, cylinder: Cylinder=None, sphere: Sphere=None):
         self.mesh = mesh
+        self.box = box
+        self.cylinder = cylinder
+        self.sphere = sphere
 
 class Visual:
     def __init__(self, pose, geometry: Geometry=None, transparency=0.0, cast_shadows=True):

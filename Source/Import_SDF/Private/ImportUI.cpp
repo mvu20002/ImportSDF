@@ -30,7 +30,7 @@ void ImportUI::Construct(const FArguments& InArgs)
         [
             SNew(SHorizontalBox)
             + SHorizontalBox::Slot().AutoWidth().Padding(5).VAlign(VAlign_Center)[ SNew(STextBlock).Text(FText::FromString("Output Path:")) ]
-            + SHorizontalBox::Slot().FillWidth(1.0f).Padding(5)[ SAssignNew(OutputPathTextBox, SEditableTextBox).Text(FText::FromString("/Game/PlantLib")) ]
+            + SHorizontalBox::Slot().FillWidth(1.0f).Padding(5)[ SAssignNew(OutputPathTextBox, SEditableTextBox).Text(FText::FromString("/Game/SDF_Imports")) ]
         ]
         + SVerticalBox::Slot().FillHeight(1.0f).Padding(5)
         [
