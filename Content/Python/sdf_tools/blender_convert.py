@@ -2,13 +2,13 @@ import bpy
 import sys
 import os
 
-# Çıktıların anında terminale düşmesi için
+# to ensure immediate output to the terminal
 def log(msg):
     print(msg)
     sys.stdout.flush()
 
 def convert():
-    # 1. Argümanları al
+    # get command line arguments after "--"
     argv = sys.argv
     try:
         if "--" in argv:
@@ -17,30 +17,29 @@ def convert():
             args = []
         
         if len(args) < 2:
-            log("HATA: Eksik argüman. Kullanım: -- <input_dae> <output_fbx>")
+            log("ERROR: Missing arguments. Usage: blender --background --python blender_convert.py -- <input.dae> <output.fbx>")
             sys.exit(1)
             
         dae_path = args[0]
         fbx_path = args[1]
 
     except Exception as e:
-        log(f"HATA: Argüman hatası: {e}")
+        log(f"ERROR: Argument error: {e}")
         sys.exit(1)
 
-    # 2. Blender Sahnesini Temizle
+    # clean the scene
     log("Cleaning scene...")
     bpy.ops.wm.read_factory_settings(use_empty=True) # Tamamen boş sahne aç
 
-    # 3. DAE Dosyasını İçe Aktar (Import)
+    # import DAE file
     if not os.path.exists(dae_path):
-        log(f"HATA: Dosya bulunamadı -> {dae_path}")
+        log(f"ERROR: File not found -> {dae_path}")
         sys.exit(1)
 
     log(f"Importing DAE: {dae_path}")
     
     try:
-        # Çökme riskini azaltmak için texture aramayı kapatıyoruz (sadece mesh lazım bize)
-        # find_chains ve auto_connect bazen karmaşık bitkilerde çökmeye neden olur.
+        # Collada import işlemi
         bpy.ops.wm.collada_import(
             filepath=dae_path, 
             auto_connect=False, 
@@ -48,15 +47,15 @@ def convert():
             fix_orientation=True
         )
     except Exception as e:
-        log(f"HATA: Import sırasında Python hatası: {e}")
+        log(f"ERROR: Python DAE import failed: {e}")
         sys.exit(1)
 
-    # Import sonrası obje var mı kontrol et
+    # check if any objects were imported
     if not bpy.context.selected_objects and not bpy.data.objects:
-        log("HATA: Import işlemi bitti ama sahnede obje yok!")
+        log("ERROR: No objects imported from DAE file.")
         sys.exit(1)
 
-    # 4. FBX Olarak Dışa Aktar (Export)
+    # export to FBX
     log(f"Exporting FBX: {fbx_path}")
     
     try:
@@ -67,13 +66,12 @@ def convert():
             axis_up='Y',
             global_scale=1.0,
             apply_unit_scale=True,
-            # Texture/Material hatalarını azaltmak için:
             use_custom_props=False,
             add_leaf_bones=False, 
             bake_anim=False 
         )
     except Exception as e:
-        log(f"HATA: FBX Export başarısız: {e}")
+        log(f"ERROR: FBX export failed: {e}")
         sys.exit(1)
 
     log("--- CONVERSION SUCCESSFUL ---")

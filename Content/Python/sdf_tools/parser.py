@@ -32,7 +32,7 @@ def parse_geometry(geom_elem):
     if geom_elem is None:
         return None
 
-    # 1. MESH KONTROLÜ
+    # MESH CHECK
     mesh_elem = geom_elem.find('mesh')
     if mesh_elem is not None:
         uri = mesh_elem.findtext('uri', default="")
@@ -40,21 +40,21 @@ def parse_geometry(geom_elem):
         mesh_name = os.path.basename(uri).replace('.dae', '').replace('.stl', '').replace('.obj', '').replace('.', '_')
         return schema.Geometry(mesh=schema.Mesh(mesh_name, uri, scale))
 
-    # 2. BOX KONTROLÜ
+    # BOX CHECK
     box_elem = geom_elem.find('box')
     if box_elem is not None:
         size_text = box_elem.findtext('size', default="1 1 1")
         size = tuple(float(v) for v in size_text.split())
         return schema.Geometry(box=schema.Box(size))
 
-    # 3. CYLINDER KONTROLÜ
+    # CYLINDER CHECK
     cyl_elem = geom_elem.find('cylinder')
     if cyl_elem is not None:
         radius = float(cyl_elem.findtext('radius', default="0.5"))
         length = float(cyl_elem.findtext('length', default="1.0"))
         return schema.Geometry(cylinder=schema.Cylinder(radius, length))
 
-    # 4. SPHERE KONTROLÜ
+    # SPHERE CHECK
     sph_elem = geom_elem.find('sphere')
     if sph_elem is not None:
         radius = float(sph_elem.findtext('radius', default="0.5"))

@@ -3,7 +3,7 @@ import subprocess
 import os
 import math
 import numpy as np
-import unreal as ue # Vector için lazım
+import unreal as ue 
 from . import schema
 
 SI_TO_UE = 100.0  # m -> cm
@@ -19,12 +19,12 @@ def convert_dae_to_fbx(dae_path, output_folder):
     fbx_name = f"{base_name}.fbx"
     fbx_path = os.path.join(output_folder, fbx_name)
 
-    # Klasör yoksa oluştur
+    # Create output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
 
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "blender_convert.py")
-    
-    # Script dosyasının varlığını kontrol et
+
+    # Check if the script file exists
     if not os.path.exists(script_path):
         print(f"Error: Helper script not found at {script_path}")
         return None
@@ -40,21 +40,18 @@ def convert_dae_to_fbx(dae_path, output_folder):
 
     print(f"Converting DAE to FBX: {file_name}...")
 
-    # stdout=subprocess.PIPE yerine None yaparsan Blender çıktılarını terminalde canlı görürsün.
-    # Ancak programatik kontrol için capture_output=True kullanıp hatayı yakalayalım.
     result = subprocess.run(cmd, text=True, capture_output=True)
 
     if result.returncode != 0:
         print("--- BLENDER ERROR ---")
-        print(result.stdout) # Bazen Blender hatayı stdout'a yazar
+        print(result.stdout) 
         print(result.stderr)
         return None
     
-    # KONTROL: Blender hata vermedi ama dosya oluştu mu?
     if not os.path.exists(fbx_path):
         print("--- ERROR: Blender finished but FBX file was not created. ---")
         print("Blender Log:")
-        print(result.stdout) # Loga bakarak neden oluşmadığını anlarız
+        print(result.stdout)
         return None
 
     print("Conversion Done.")
@@ -117,7 +114,6 @@ def parse_scale_text(text):
     return tuple(vals[:3])
 
 def world_pose_of_joint_childed(model: schema.Model, joint: schema.Joint):
-    """Joint <pose> parent link frame'inde varsayımıyla dünya pozunu döndürür."""
     child_link = model.links.get(joint.child)
     if child_link is None:
         return (0,0,0,0,0,0)

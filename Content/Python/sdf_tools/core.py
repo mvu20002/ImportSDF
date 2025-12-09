@@ -5,92 +5,96 @@ from . import utils
 from . import parser
 
 def load_meshes_for_model(model: schema.Model, ASSET_PKG_PATH):
-    """
-    1. DAE dosyalarını bulur.
-    2. Blender ile FBX'e çevirir.
-    3. Unreal'a 'ASSET_PKG_PATH' konumuna import eder.
-    """
     mesh_dict = {}
     cube_mesh = ue.load_asset("/Engine/BasicShapes/Cube")
     
-    # Geçici dönüşüm klasörü (Saved/TempImport)
+    uri_cache = {} 
+
     temp_import_dir = os.path.join(ue.Paths.project_saved_dir(), "TempImportFBX")
     if not os.path.exists(temp_import_dir):
         os.makedirs(temp_import_dir)
 
-    for link in model.links.values():
-        if not link.visuals: continue
+    total_links = len(model.links)
+    
+    with ue.ScopedSlowTask(total_links, "Models processing..") as slow_task:
+        slow_task.make_dialog(True)
         
-        for visual in link.visuals:
-            if not (visual and visual.geometry and visual.geometry.mesh):
-                continue
+        for link in model.links.values():
+            if slow_task.should_cancel(): break
+            slow_task.enter_progress_frame(1, f"Link: {link.name}")
+
+            if not link.visuals: continue
             
-            uri = visual.geometry.mesh.uri
-            if uri.startswith("file://"): uri = uri.replace("file://", "")
-            
-            # --- CONVERSION ---
-            fbx_disk_path = None
-            if uri.endswith(".dae"):
-                # DAE -> FBX Çevirimi
-                fbx_disk_path = utils.convert_dae_to_fbx(uri, temp_import_dir)
-            elif uri.endswith(".fbx"):
-                # Zaten FBX ise direkt kullan
-                fbx_disk_path = uri
+            for visual in link.visuals:
+                if not (visual and visual.geometry and visual.geometry.mesh):
+                    continue
+                
+                uri = visual.geometry.mesh.uri
+                if uri.startswith("file://"): uri = uri.replace("file://", "")
+                
+                mesh_name = visual.geometry.mesh.mesh_name
+                
+                if uri in uri_cache:
+                    mesh_dict[mesh_name] = uri_cache[uri]
+                    continue
+                
+                # --- CONVERSION ---
+                fbx_disk_path = None
+                if uri.endswith(".dae"):
+                    slow_task.enter_progress_frame(0, f"Blender: {os.path.basename(uri)}")
+                    fbx_disk_path = utils.convert_dae_to_fbx(uri, temp_import_dir)
+                elif uri.endswith(".fbx"):
+                    fbx_disk_path = uri
 
-            # Dosya yoksa veya çevrilemediyse Cube kullan
-            mesh_name = visual.geometry.mesh.mesh_name
-            if not fbx_disk_path or not os.path.exists(fbx_disk_path):
-                mesh_dict[mesh_name] = cube_mesh
-                continue
+                if not fbx_disk_path or not os.path.exists(fbx_disk_path):
+                    mesh_dict[mesh_name] = cube_mesh
+                    uri_cache[uri] = cube_mesh 
+                    continue
 
-            # --- IMPORT TASK ---
-            # Hedef: .../ModelName/Assets/MeshName
-            destination_name = mesh_name
-            asset_path = f"{ASSET_PKG_PATH}/{destination_name}.{destination_name}"
+                # --- IMPORT ---
+                destination_name = mesh_name
+                asset_path = f"{ASSET_PKG_PATH}/{destination_name}.{destination_name}"
 
-            # Zaten import edilmişse tekrar etme
-            if ue.EditorAssetLibrary.does_asset_exist(asset_path):
-                mesh_dict[mesh_name] = ue.load_asset(asset_path)
-                continue
+                if ue.EditorAssetLibrary.does_asset_exist(asset_path):
+                    loaded_asset = ue.load_asset(asset_path)
+                    mesh_dict[mesh_name] = loaded_asset
+                    uri_cache[uri] = loaded_asset 
+                    continue
 
-            task = ue.AssetImportTask()
-            task.set_editor_property("filename", fbx_disk_path)
-            task.set_editor_property("destination_path", ASSET_PKG_PATH)
-            task.set_editor_property("destination_name", destination_name)
-            task.set_editor_property("replace_existing", True)
-            task.set_editor_property("automated", True)
-            task.set_editor_property("save", True)
+                task = ue.AssetImportTask()
+                task.set_editor_property("filename", fbx_disk_path)
+                task.set_editor_property("destination_path", ASSET_PKG_PATH)
+                task.set_editor_property("destination_name", destination_name)
+                task.set_editor_property("replace_existing", True)
+                task.set_editor_property("automated", True)
+                task.set_editor_property("save", True)
 
-            # --- IMPORT AYARLARI ---
-            options = ue.FbxImportUI()
-            options.set_editor_property("import_mesh", True)
-            options.set_editor_property("import_textures", True)  # Textureları al
-            options.set_editor_property("import_materials", True) # Materyalleri oluştur
-            
-            options.set_editor_property("original_import_type", ue.FBXImportType.FBXIT_STATIC_MESH)
+                options = ue.FbxImportUI()
+                options.set_editor_property("import_mesh", True)
+                options.set_editor_property("import_textures", True)
+                options.set_editor_property("import_materials", True)
+                options.set_editor_property("original_import_type", ue.FBXImportType.FBXIT_STATIC_MESH)
 
-            # Static Mesh Ayarları
-            # İSTEĞİN: Sadece Combine Meshes seçili olsun
-            sm_data = options.static_mesh_import_data
-            sm_data.set_editor_property("combine_meshes", True) 
-            sm_data.set_editor_property("remove_degenerates", True) # Bunu da açık tutmak sağlıklıdır
-            
-            task.set_editor_property("options", options)
-
-            # Importu Çalıştır
-            ue.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
-            
-            if ue.EditorAssetLibrary.does_asset_exist(asset_path):
-                mesh_dict[mesh_name] = ue.load_asset(asset_path)
-                ue.log(f"Imported Mesh: {mesh_name}")
-            else:
-                ue.log_warning(f"Import Failed: {mesh_name}")
-                mesh_dict[mesh_name] = cube_mesh
+                sm_data = options.static_mesh_import_data
+                sm_data.set_editor_property("combine_meshes", True) 
+                sm_data.set_editor_property("remove_degenerates", True)
+                
+                task.set_editor_property("options", options)
+                ue.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+                
+                if ue.EditorAssetLibrary.does_asset_exist(asset_path):
+                    loaded_asset = ue.load_asset(asset_path)
+                    mesh_dict[mesh_name] = loaded_asset
+                    uri_cache[uri] = loaded_asset
+                    ue.log(f"Imported: {mesh_name}")
+                else:
+                    mesh_dict[mesh_name] = cube_mesh
+                    uri_cache[uri] = cube_mesh
 
     return mesh_dict
 
 def run(sdf_path_arg=None, dest_pkg_arg="/Game/SDF_Imports", analyze_only=False):
-    # --- AYARLAR ---
+    # --- SETTINGS ---
     SDF_PATH = sdf_path_arg if sdf_path_arg else r"/tmp/model.sdf"
     
     ue.log(f"Importing SDF: {SDF_PATH}")
@@ -102,19 +106,13 @@ def run(sdf_path_arg=None, dest_pkg_arg="/Game/SDF_Imports", analyze_only=False)
         return False
 
     if analyze_only:
-        # Raporlama kısmı (Değişmedi)
         register_path = ue.Paths.project_saved_dir()
         log_name = "python_temp_result.txt"
         tam_yol = os.path.join(register_path, log_name)
         with open(tam_yol, 'w') as f: f.write(parser.report(model))
         return True
-    
-    # --- KLASÖR YAPISI ---
-    # Kullanıcıdan gelen: /Game/SDF_Importings
-    # Model Adı: test_model
-    # Oluşacak BP Yolu: /Game/SDF_Importings/test_model/
-    # Oluşacak Asset Yolu: /Game/SDF_Importings/test_model/Assets/
-    
+
+    # Create target package paths
     MODEL_PKG_PATH = f"{dest_pkg_arg}/{model.name}"
     ASSET_PKG_PATH = f"{MODEL_PKG_PATH}/Assets"
 
@@ -126,21 +124,21 @@ def run(sdf_path_arg=None, dest_pkg_arg="/Game/SDF_Imports", analyze_only=False)
     shape_sphere = ue.load_asset("/Engine/BasicShapes/Sphere")
     shape_cylinder = ue.load_asset("/Engine/BasicShapes/Cylinder")
     
-    # Meshleri yeni Assets klasörüne import et
+    # Import meshes and get a dictionary
     mesh_assets = load_meshes_for_model(model, ASSET_PKG_PATH)
 
-    # --- BLUEPRINT OLUŞTURMA ---
+    # --- BLUEPRINT CREATION ---
     model_name = model.name
     
-    # Eski BP varsa sil (Yeni klasör yapısında)
+    # If BP already exists, delete it first
     bp_asset_path = f"{MODEL_PKG_PATH}/{model_name}"
     if ue.EditorAssetLibrary.does_asset_exist(bp_asset_path):
         ue.EditorAssetLibrary.delete_asset(bp_asset_path)
 
     factory = ue.BlueprintFactory()
     factory.set_editor_property("parent_class", ue.Actor)
-    
-    # BP'yi Model Klasörünün içine oluşturuyoruz
+
+    # Create the BP inside the Model Folder
     bp = ue.AssetToolsHelpers.get_asset_tools().create_asset(
         asset_name=model.name, 
         package_path=MODEL_PKG_PATH, 
@@ -149,10 +147,10 @@ def run(sdf_path_arg=None, dest_pkg_arg="/Game/SDF_Imports", analyze_only=False)
     )
     
     if not bp:
-        ue.log_error("Blueprint olusturulamadi!")
+        ue.log_error("BP Creation Failed!")
         return
 
-    # --- SUBOBJECT API (Değişmedi, sadece mesh ataması artık assetlerden) ---
+    # --- SUBOBJECT API ---
     subsys = ue.get_engine_subsystem(ue.SubobjectDataSubsystem)
     BFL = ue.SubobjectDataBlueprintFunctionLibrary
     def h2o(h): return BFL.get_object(BFL.get_data(h))
@@ -170,15 +168,9 @@ def run(sdf_path_arg=None, dest_pkg_arg="/Game/SDF_Imports", analyze_only=False)
     
     def add_sm_internal(link: schema.Link):
         components = []
-        
-        # Temel şekilleri önceden yükle (Performans için loop dışında olsa daha iyi ama burada da olur)
-        shape_cube = ue.load_asset("/Engine/BasicShapes/Cube")
-        shape_sphere = ue.load_asset("/Engine/BasicShapes/Sphere")
-        shape_cylinder = ue.load_asset("/Engine/BasicShapes/Cylinder")
 
         if link.visuals:
             for idx, visual in enumerate(link.visuals):
-                # DÜZELTME 1: Sadece geometry var mı diye bakıyoruz. .mesh olmak ZORUNDA DEĞİL.
                 if not (visual and visual.geometry): 
                     continue
                 
@@ -197,64 +189,57 @@ def run(sdf_path_arg=None, dest_pkg_arg="/Game/SDF_Imports", analyze_only=False)
                 target_mesh = None
                 target_scale = ue.Vector(1, 1, 1)
 
-                # --- 1. MESH KONTROLÜ ---
+                # --- MESH CHECK ---
                 if geom.mesh:
-                    # Mesh sözlüğünden bulmaya çalış, yoksa küp koy
+                    # Try to find it in the mesh dictionary, otherwise use the cube
                     target_mesh = mesh_assets.get(geom.mesh.mesh_name, shape_cube)
                     if geom.mesh.scale:
                         target_scale = ue.Vector(*geom.mesh.scale)
 
-                # --- 2. BOX KONTROLÜ ---
+                # --- BOX CHECK ---
                 elif geom.box:
                     target_mesh = shape_cube
                     # SDF size (metre) -> Unreal Scale (1.0 = 1m = 100cm)
                     if geom.box.size:
                         target_scale = ue.Vector(*geom.box.size)
 
-                # --- 3. SPHERE KONTROLÜ ---
+                # --- SPHERE CHECK ---
                 elif geom.sphere:
                     target_mesh = shape_sphere
-                    # Radius -> Scale (Radius 0.5 ise çap 1.0, scale 1.0)
+                    # Radius -> Scale 
                     if geom.sphere.radius:
                         d = geom.sphere.radius * 2.0
                         target_scale = ue.Vector(d, d, d)
 
-                # --- 4. CYLINDER KONTROLÜ ---
+                # --- CYLINDER CHECK ---
                 elif geom.cylinder:
                     target_mesh = shape_cylinder
-                    # Radius -> Scale XY (Çap), Length -> Scale Z
                     if geom.cylinder.radius and geom.cylinder.length:
                         d = geom.cylinder.radius * 2.0
                         l = geom.cylinder.length
                         target_scale = ue.Vector(d, d, l)
 
-                # --- ATAMA İŞLEMİ ---
+                # --- SETTING MESH & PROPERTIES ---
                 if target_mesh:
                     sm.set_static_mesh(target_mesh)
                     sm.set_editor_property("relative_scale3d", target_scale)
                 else:
-                    # Hiçbir geometri tipi tutmazsa (Fallback)
                     sm.set_static_mesh(shape_cube)
                     sm.set_editor_property("relative_scale3d", ue.Vector(0.1, 0.1, 0.1))
                 
                 sm.set_editor_property("mobility", ue.ComponentMobility.MOVABLE)
-                
-                # DÜZELTME 2: Buradaki 'visual.geometry.mesh.scale' satırı silindi.
-                # Çünkü Box gelirse mesh yoktur, kod patlar. 
-                # Zaten yukarıda target_scale'i ayarladık.
 
                 components.append(sm)
 
             if components: return components
 
-        # --- FALLBACK (Eğer Link hiç görsel içermiyorsa) ---
+        # --- FALLBACK CUBE ---
         params = ue.AddNewSubobjectParams(parent_handle=scene_handle, new_class=ue.StaticMeshComponent, blueprint_context=bp)
         sm_handle, _ = subsys.add_new_subobject(params)
         subsys.attach_subobject(scene_handle, sm_handle)
         sm = h2o(sm_handle)
-        sm.set_static_mesh(shape_cylinder) # Fallback'i tekrar küp yaptım
-        
-
+        sm.set_static_mesh(shape_cube)
+        sm.set_editor_property("relative_scale3d", ue.Vector(0.1, 0.1, 0.1))
         sm.set_editor_property("mobility", ue.ComponentMobility.MOVABLE)
         return [sm]
 

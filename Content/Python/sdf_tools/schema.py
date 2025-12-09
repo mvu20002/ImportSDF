@@ -20,7 +20,6 @@ class Sphere:
         self.radius = radius
 
 class Geometry:
-    # Mesh'in yanına diğerlerini de ekliyoruz (hepsi opsiyonel)
     def __init__(self, mesh: Mesh=None, box: Box=None, cylinder: Cylinder=None, sphere: Sphere=None):
         self.mesh = mesh
         self.box = box
