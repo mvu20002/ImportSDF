@@ -1,11 +1,12 @@
 import unreal
+import sdf_tools.core as sdf_core
 
 @unreal.uclass()
 class SDFImporterCommand(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
         # 1. Widget'ın yolunu belirle
-        widget_path = "/Import_SDF/EUW_SDFImporter"
+        widget_path = "/Import_SDF/SDFImporter"
         
         # 2. Asset'i yükle
         if not unreal.EditorAssetLibrary.does_asset_exist(widget_path):
@@ -65,4 +66,4 @@ def add_sdf_toolbar_button():
     menus.refresh_all_widgets()
 
 # Kodu çalıştır
-add_sdf_toolbar_button()
+# add_sdf_toolbar_button()

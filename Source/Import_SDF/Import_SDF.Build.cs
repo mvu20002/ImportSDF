@@ -40,7 +40,12 @@ public class Import_SDF : ModuleRules
 				"SlateCore",
 				"DesktopPlatform",
 				"MainFrame",
-				"Projects"
+				"Projects",
+				"ToolMenus",
+				"SlateCore",
+				"Slate",
+				"InputCore",
+				"PythonScriptPlugin"
 			}
 			);
 		

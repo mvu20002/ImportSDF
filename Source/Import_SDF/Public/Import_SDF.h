@@ -13,6 +13,10 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
+	void PluginButtonClicked();
+
 private:
 	TSharedPtr< FSlateStyleSet > StyleSet;
+	TSharedRef< class SDockTab > OnSpawnPluginTab(const class FSpawnTabArgs& SpawnTabArgs);
+	void RegisterMenus();
 };
