@@ -101,7 +101,7 @@ This is an early-stage project. Contributions, bug reports, and feedback are ver
 
 ## License
 
-TBD - Contact author for licensing information.
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Credits
 
