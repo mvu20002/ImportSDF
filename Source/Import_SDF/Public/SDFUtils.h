@@ -2,11 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "SDFUtils.generated.h" // Dosya adı SDFUtils olduğu için
+#include "SDFUtils.generated.h"
 
-/**
- * SDF import islemleri ve Python entegrasyonu icin genel yardimci kutuphane.
- */
+
 UCLASS()
 class IMPORT_SDF_API USDFUtils : public UBlueprintFunctionLibrary
 {
@@ -14,7 +12,6 @@ class IMPORT_SDF_API USDFUtils : public UBlueprintFunctionLibrary
 
 public:
 
-	// --- Dosya Diyalog İşlemleri ---
 
 	UFUNCTION(BlueprintCallable, Category = "SDF Tools | File IO")
 	static bool OpenFileDialog(
@@ -24,11 +21,6 @@ public:
 		TArray<FString>& OutFileNames
 	);
 
-	// --- Python Entegrasyon İşlemleri ---
-
-	/**
-	 * Projenin 'Saved' klasorundeki belirtilen dosyayi okur.
-	 */
 	UFUNCTION(BlueprintCallable, Category = "SDF Tools | Python Integration")
 	static FString ReadTextFromSavedDir(FString FileName = "python_temp_result.txt");
 	

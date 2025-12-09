@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Input/SEditableTextBox.h"
-#include "Widgets/Input/SMultiLineEditableTextBox.h" // <--- DÜZELTİLEN HEADER
+#include "Widgets/Input/SMultiLineEditableTextBox.h" 
 
 class ImportUI : public SCompoundWidget
 {
@@ -14,14 +14,11 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
-	// Arayüz Elemanları
 	TSharedPtr<SEditableTextBox> SDFPathTextBox;
 	TSharedPtr<SEditableTextBox> OutputPathTextBox;
 	
-	// BURASI DEĞİŞTİ: Text yerine TextBox (Daha şık görünür)
 	TSharedPtr<SMultiLineEditableTextBox> ReportView; 
 
-	// Fonksiyonlar
 	FReply OnBrowseClicked();
 	FReply OnImportClicked();
 	

@@ -8,14 +8,12 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Engine/Engine.h"
-#include "IPythonScriptPlugin.h" // <--- KRİTİK HEADER
+#include "IPythonScriptPlugin.h" 
 
 #define LOCTEXT_NAMESPACE "ImportUI"
 
 void ImportUI::Construct(const FArguments& InArgs)
 {
-    // ... (Arayüz kodların aynen kalacak, burayı değiştirmene gerek yok) ...
-    // Sadece fonksiyonların içeriğini değiştiriyoruz aşağıda.
     ChildSlot
     [
         SNew(SVerticalBox)
@@ -63,15 +61,12 @@ FReply ImportUI::OnBrowseClicked()
     return FReply::Handled();
 }
 
-// --- GÜNCELLENEN FONKSİYON 1 ---
 void ImportUI::UpdateReportView(const FString& SDFPath)
 {
-    // Plugin yolunu al
     FString PluginPythonPath = FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("SDF_Import/Content/Python"));
     FString CleanPluginPath = FPaths::ConvertRelativePathToFull(PluginPythonPath);
     CleanPluginPath.ReplaceInline(TEXT("\\"), TEXT("/"));
 
-    // Doğrudan Python Kodu (py "..." tırnak karmaşası yok!)
     FString PythonCode = FString::Printf(
         TEXT("import sys\n"
              "sys.path.append(r'%s')\n"
@@ -86,7 +81,6 @@ void ImportUI::UpdateReportView(const FString& SDFPath)
         *SDFPath
     );
 
-    // DİREKT PYTHON MOTORUNU ÇAĞIRIYORUZ
     IPythonScriptPlugin* PythonPlugin = IPythonScriptPlugin::Get();
     if (PythonPlugin && PythonPlugin->IsPythonAvailable())
     {
@@ -97,7 +91,6 @@ void ImportUI::UpdateReportView(const FString& SDFPath)
         UE_LOG(LogTemp, Error, TEXT("Python Plugin yuklu degil veya aktif degil!"));
     }
 
-    // Dosya okuma (Aynı kalıyor)
     FString SavedDir = FPaths::ProjectSavedDir();
     FString ReportFile = FPaths::Combine(SavedDir, TEXT("python_temp_result.txt"));
     FString ResultString;
@@ -111,7 +104,6 @@ void ImportUI::UpdateReportView(const FString& SDFPath)
         if (ReportView.IsValid()) ReportView->SetText(FText::FromString("Error: Python execution failed. Check Output Log."));
     }
 
-	// Geçici dosyayı sil
 	bool bDeleted = IFileManager::Get().Delete(*ReportFile, false, true);
 
 	if (bDeleted)
@@ -124,7 +116,6 @@ void ImportUI::UpdateReportView(const FString& SDFPath)
 	}
 }
 
-// --- GÜNCELLENEN FONKSİYON 2 ---
 FReply ImportUI::OnImportClicked()
 {
     FString SDFPath = SDFPathTextBox->GetText().ToString();
@@ -151,7 +142,6 @@ FReply ImportUI::OnImportClicked()
         *OutPath
     );
 
-    // DİREKT PYTHON MOTORUNU ÇAĞIRIYORUZ
     IPythonScriptPlugin* PythonPlugin = IPythonScriptPlugin::Get();
     if (PythonPlugin && PythonPlugin->IsPythonAvailable())
     {
