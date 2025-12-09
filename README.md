@@ -1,41 +1,115 @@
 # Import_SDF – Unreal Engine 5 Plugin
 
-A work-in-progress Unreal Engine 5 plugin for importing Signed Distance Field (SDF) data into Unreal Editor.
+> ## ⚠️ UNDER ACTIVE DEVELOPMENT ⚠️
+> 
+> **This plugin is in early development stage and NOT production-ready.**
+> 
+> - Many features are experimental or partially implemented
+> - Only COLLADA (`.dae`) mesh format is currently supported
+> - Physics constraints and joint behaviors may not work correctly
+> - API and functionality are subject to change without notice
+> - Extensive testing has not been performed
+> 
+> **Use at your own risk. Contributions and feedback are welcome!**
 
-## Status
-Early development. APIs, file formats, and UX may change.
+## What is SDFormat?
 
-## Features
-- Parse and import SDF data via native C++ module
-- Utilities for SDF processing in `Content/Python/sdf_tools`
-- Optional Blender-assisted conversion (`blender_convert.py`)
+**SDFormat** (Simulation Description Format), sometimes abbreviated as SDF, is an XML format that describes objects and environments for robot simulators, visualization, and control. Originally developed as part of the Gazebo robot simulator, SDFormat was designed with scientific robot applications in mind and is widely used in robotics research and the ROS (Robot Operating System) ecosystem.
+
+## Overview
+
+This plugin enables import of SDFormat files (`.sdf`) from Gazebo into Unreal Engine 5. It converts COLLADA mesh files to FBX using Blender and creates Blueprint actors with basic physics setup.
+
+## Current Features
+
+- ✅ Basic SDF XML parsing (links, joints, visuals, inertial data)
+- ✅ COLLADA (`.dae`) to FBX conversion via Blender
+- ✅ Blueprint actor generation with mesh components
+- ✅ Simple editor UI for file selection
+- ✅ Basic coordinate system conversion (Gazebo → Unreal)
+
+## Known Limitations
+
+- ⚠️ **Only COLLADA (`.dae`) meshes supported** - FBX/STL/OBJ import not yet functional
+- ⚠️ Primitive shapes (box, sphere, cylinder) may not work correctly
+- ⚠️ Physics constraints are experimental and unreliable
+- ⚠️ Joint limits and dynamics not properly implemented
+- ⚠️ Material/texture import is incomplete
+- ⚠️ No sensor or plugin support
+- ⚠️ Tested only on Linux - Windows/Mac compatibility unknown
 
 ## Requirements
-- Unreal Engine 5 (tested on Linux; Windows/Mac untested)
-- A C++ toolchain compatible with UE5
-- Optional: Blender (for Python-based conversion)
+
+- **Unreal Engine**: 5.5.3 or later
+- **Platform**: Linux (Ubuntu/Debian) - Windows/Mac untested
+- **Blender**: 4.5.5 or later for COLLADA conversion
+  - Must configure path in `Content/Python/sdf_tools/utils.py`
+- **Plugins** (auto-enabled): PythonScriptPlugin, EditorScriptingUtilities
 
 ## Installation
-1. Clone or copy this repository into your UE project at:
-   `YourProject/Plugins/SDF_Import`
-2. Open the project in Unreal Editor and enable the plugin if prompted.
-3. Rebuild the project if Unreal requests a recompile.
 
-## Usage (early)
-1. Prepare SDF data in a compatible format (e.g., `.sdf` files).
-2. Once the plugin is enabled, you can use Plugin's UI for importing SDF files.
-<img src="media/plugin_location.png" width="600">
-3. Specify your sdf path. When you specify it UI will show some info about the SDF file.
-<img src="media/rl_video.gif" width="600">
-4. Click "Generate Asset" to import the SDF data into your project. Plugin will automatically convert collada files to fbx files and import them to your project. You can find the imported assets in the Content Browser under `SDF_Importings/[Your Model Name]/Assets/`. And generated bluprint actor in `SDF_Importings/[Your Model Name]/[Your Model Name]`.
-<img src="media/rl_video.gif" width="600">
+1. Clone into your project's `Plugins` directory:
+   ```bash
+   cd YourProject/Plugins/
+   git clone https://github.com/mvu20002/ImportSDF.git SDF_Import
+   ```
 
+2. Configure Blender path in `Content/Python/sdf_tools/utils.py`:
+   ```python
+   BLENDER_EXE = "/path/to/your/blender"
+   ```
 
+3. Open project in Unreal Editor and enable the plugin if prompted
 
+4. Rebuild if requested
 
+## Usage
+
+1. **Open the tool**: Click "SDF Import" button in the Level Editor toolbar
+
+   <img src="Resources/openui.png" width="500">
+
+2. **Select SDF file**: Click "Explore" and choose your `.sdf` file
+
+   <img src="Resources/browse.png" width="500">
+
+3. **Review info**: Tool displays model information (links, mass, required meshes)
+
+4. **Generate Asset**: Click "Generate Asset" to import
+
+   <img src="Resources/importsdf.png" width="500">
+
+5. **Find assets**: Blueprint and meshes in `/Game/SDF_Imports/[ModelName]/`
+
+   <img src="Resources/final.png" width="500">
+
+## Troubleshooting
+
+- **Python errors**: Enable PythonScriptPlugin in Plugin Manager
+- **Blender errors**: Check path in `utils.py`, verify COLLADA file integrity
+- **Meshes missing**: Ensure `.dae` files are accessible, check Output Log
+- **Physics broken**: This is expected - physics system is not fully implemented
 
 ## Contributing
-Issues and pull requests are welcome. Please keep changes small and focused.
+
+This is an early-stage project. Contributions, bug reports, and feedback are very welcome!
+
+1. Fork the repository
+2. Create a feature branch
+3. Test your changes
+4. Submit a pull request
 
 ## License
-TBD.
+
+TBD - Contact author for licensing information.
+
+## Credits
+
+**Author**: mvu20002  
+**Repository**: [github.com/mvu20002/ImportSDF](https://github.com/mvu20002/ImportSDF)
+
+Built with SDFormat specification by Open Source Robotics Foundation.
+
+---
+
+*This is experimental software. Use at your own risk.*
