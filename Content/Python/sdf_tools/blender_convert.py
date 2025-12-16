@@ -55,6 +55,17 @@ def convert():
         log("ERROR: No objects imported from DAE file.")
         sys.exit(1)
 
+    #    --- YENI EKLENECEK KISIM BASLANGICI ---
+    # Materyal isimlerini Mesh ismine göre unique yap
+    # Bu sayede Unreal'da "Material", "Material.001" çakışması olmaz.
+    input_filename = os.path.splitext(os.path.basename(dae_path))[0]
+    
+    for mat in bpy.data.materials:
+        original_name = mat.name
+        # Materyal ismini "DosyaAdi_MateryalAdi" yap
+        mat.name = f"{input_filename}_{original_name}"
+        log(f"Renamed Material: {original_name} -> {mat.name}")
+
     # export to FBX
     log(f"Exporting FBX: {fbx_path}")
     
@@ -62,13 +73,23 @@ def convert():
         bpy.ops.export_scene.fbx(
             filepath=fbx_path,
             use_selection=False,
-            axis_forward='-Z',
-            axis_up='Y',
+            axis_forward='-Z',  # Unreal icin standart: -Z Forward
+            axis_up='Z',        # Unreal icin standart: Z Up (Blender varsayilani Y'dir ama Z denemek bazen kaymayi duzeltir, oncekini bozma dersen Y kalsin)
+            # NOT: Senin onceki ayarin axis_up='Y' idi. Unreal Z-up oldugu icin Blender'in bunu cevirmesi gerekir.
+            # Eger model yan yatiyorsa burayi degistiririz. Standart Blender->UE5: Forward:-Z, Up:Y 'dir.
+            
             global_scale=1.0,
             apply_unit_scale=True,
-            use_custom_props=False,
+            apply_scale_options='FBX_SCALE_ALL', # Scale sorunlarini cozer
+            
+            use_custom_props=True,
             add_leaf_bones=False, 
-            bake_anim=False 
+            bake_anim=False,
+            
+            # --- KRITIK DUZELTMELER ---
+            mesh_smooth_type='FACE',  # "No smoothing group" hatasini bu cozer!
+            path_mode='COPY',         # Texturelari kopyalar
+            embed_textures=True       # Texturelari FBX icine gomer
         )
     except Exception as e:
         log(f"ERROR: FBX export failed: {e}")

@@ -50,7 +50,14 @@ FReply ImportUI::OnBrowseClicked()
     const void* ParentWindowHandle = FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr);
 
     bool bOpened = DesktopPlatform->OpenFileDialog(
-        ParentWindowHandle, TEXT("Select SDF File"), FPaths::ProjectDir(), TEXT(""), TEXT("SDF Files (*.sdf)|*.sdf"), EFileDialogFlags::None, OutFileNames
+        ParentWindowHandle, 
+        TEXT("Select SDF File"), 
+        // starting directory must be: /home/veli/btp_ws/Plant2SimDynamics-main/str_dyn_gen/models_out/model_0
+        TEXT("/home/veli/btp_ws/Plant2SimDynamics-main/str_dyn_gen/models_out"),
+        TEXT(""),
+        TEXT("SDF Files (*.sdf)|*.sdf"),
+        EFileDialogFlags::None,
+        OutFileNames
     );
 
     if (bOpened && OutFileNames.Num() > 0)

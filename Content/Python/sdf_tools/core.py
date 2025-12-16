@@ -30,6 +30,9 @@ def load_meshes_for_model(model: schema.Model, ASSET_PKG_PATH):
                     continue
                 
                 uri = visual.geometry.mesh.uri
+                # if <uri>meshes/shelf_big_movai.dae</uri> -> make it a proper path
+                if not (uri.startswith("file://") or os.path.isabs(uri)):
+                    uri = os.path.join(os.path.dirname(model.sdf_path), uri)
                 if uri.startswith("file://"): uri = uri.replace("file://", "")
                 
                 mesh_name = visual.geometry.mesh.mesh_name
@@ -78,6 +81,7 @@ def load_meshes_for_model(model: schema.Model, ASSET_PKG_PATH):
                 sm_data = options.static_mesh_import_data
                 sm_data.set_editor_property("combine_meshes", True) 
                 sm_data.set_editor_property("remove_degenerates", True)
+                sm_data.set_editor_property("reorder_material_to_fbx_order", True)
                 
                 task.set_editor_property("options", options)
                 ue.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])

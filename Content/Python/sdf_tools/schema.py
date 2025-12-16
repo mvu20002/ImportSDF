@@ -138,7 +138,8 @@ class Joint:
 
 
 class Model:
-    def __init__(self, name, links=None, joints=None):
+    def __init__(self, name, links=None, joints=None, sdf_path=""):
         self.name = name
         self.links = links if links is not None else {}
         self.joints = joints if joints is not None else {}
+        self.sdf_path = sdf_path

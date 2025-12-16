@@ -167,4 +167,4 @@ def parse_sdf(sdf_path):
 
             joints[joint_name] = schema.Joint(joint_name, parent, child, joint_type, axis, pose, limit, dynamics)
 
-    return schema.Model(model_name, links, joints)
+    return schema.Model(model_name, links, joints, sdf_path)
